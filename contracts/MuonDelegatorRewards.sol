@@ -5,10 +5,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "./interfaces/IBondedToken.sol";
 
 contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    IBondedToken public bondedToken;
     address public muonToken;
     address public delegationNodeStaker;
 
@@ -21,17 +23,19 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
 
     address[] public allUsers;
 
+    event Delegated(address indexed user, uint256 nftId);
     event Staked(address indexed user, uint256 balance, uint256 amount);
-
     event Rewarded(address indexed user, uint256 balance, uint256 amount);
 
     function initialize(
         address _muonTokenAddress,
+        address _bondedTokenAddress,
         uint256 _lastDisTime,
         address _nodeStaker
     ) public initializer {
         __MuonDelegatorRewards_init(
             _muonTokenAddress,
+            _bondedTokenAddress,
             _lastDisTime,
             _nodeStaker
         );
@@ -39,12 +43,14 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
 
     function __MuonDelegatorRewards_init(
         address _muonTokenAddress,
+        address _bondedTokenAddress,
         uint256 _lastDisTime,
         address _nodeStaker
     ) internal onlyInitializing {
         __Ownable_init();
         __MuonDelegatorRewards_init_unchained(
             _muonTokenAddress,
+            _bondedTokenAddress,
             _lastDisTime,
             _nodeStaker
         );
@@ -52,10 +58,12 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
 
     function __MuonDelegatorRewards_init_unchained(
         address _muonTokenAddress,
+        address _bondedTokenAddress,
         uint256 _lastDisTime,
         address _nodeStaker
     ) internal onlyInitializing {
         muonToken = _muonTokenAddress;
+        bondedToken = IBondedToken(_bondedTokenAddress);
         lastDisTime = _lastDisTime;
         delegationNodeStaker = _nodeStaker;
     }
@@ -126,6 +134,29 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         }
     }
 
+    function delegate(uint256 _nftID, address _user) external {
+        bondedToken.safeTransferFrom(msg.sender, delegationNodeStaker, _nftID);
+        require(
+            bondedToken.ownerOf(_nftID) == delegationNodeStaker,
+            "Tranfer failed"
+        );
+        address[] memory tokens = new address[](1);
+        tokens[0] = muonToken;
+        uint256 amount = bondedToken.getLockedOf(_nftID, tokens)[0];
+
+        if (userIndexes[_user] == 0) {
+            startDates[_user] = block.timestamp;
+            allUsers.push(_user);
+            userIndexes[_user] = allUsers.length;
+        } else {
+            startDates[_user] = calcNewStartDate(_user, amount);
+        }
+        balances[_user] += amount;
+
+        emit Delegated(_user, _nftID);
+        emit Staked(_user, balances[_user], amount);
+    }
+
     function stake(uint256 _amount, address _user) external {
         require(userIndexes[_user] != 0, "Invalid user");
 
@@ -142,14 +173,15 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         ) - balance;
         require(_amount == receivedAmount, "Invalid received amount");
 
-        uint256 b1t1 = balances[_user] * startDates[_user];
-        uint256 b2t2 = block.timestamp * _amount;
-        uint256 newStartDate = (b1t1 + b2t2) / (balances[_user] + _amount);
-
+        uint256 newStartDate = calcNewStartDate(_user, _amount);
         balances[_user] += _amount;
         startDates[_user] = newStartDate;
 
         emit Staked(_user, balances[_user], _amount);
+    }
+
+    function setRestake(bool _restake) external {
+        restake[msg.sender] = _restake;
     }
 
     function calcAmounts(
@@ -172,6 +204,15 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         for (uint256 i = 0; i < allUsers.length; i++) {
             out[i] = (out[i] * amount) / totalSecs;
         }
+    }
+
+    function calcNewStartDate(
+        address _user,
+        uint256 _stakeAmount
+    ) public view returns (uint256 newStartDate) {
+        uint256 b1t1 = balances[_user] * startDates[_user];
+        uint256 b2t2 = block.timestamp * _stakeAmount;
+        newStartDate = (b1t1 + b2t2) / (balances[_user] + _stakeAmount);
     }
 
     function transferable(
