@@ -117,8 +117,13 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
     }
 
     function removeUser(uint256 index) external onlyOwner {
+        address _user = allUsers[index];
         allUsers[index] = allUsers[allUsers.length - 1];
         allUsers.pop();
+        balances[_user] = 0;
+        startDates[_user] = 0;
+        restake[_user] = false;
+        userIndexes[_user] = 0;
     }
 
     function adminWithdraw(
@@ -134,7 +139,7 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         }
     }
 
-    function delegate(uint256 _nftID, address _user) external {
+    function delegate(uint256 _nftID, address _user, bool _restake) external {
         bondedToken.safeTransferFrom(msg.sender, delegationNodeStaker, _nftID);
         require(
             bondedToken.ownerOf(_nftID) == delegationNodeStaker,
@@ -148,6 +153,7 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
             startDates[_user] = block.timestamp;
             allUsers.push(_user);
             userIndexes[_user] = allUsers.length;
+            restake[_user] = _restake;
         } else {
             startDates[_user] = calcNewStartDate(_user, amount);
         }
