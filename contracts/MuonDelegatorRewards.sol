@@ -23,7 +23,8 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
 
     address[] public allUsers;
 
-    event Delegated(address indexed user, uint256 nftId);
+    event DelegatedNFT(address indexed user, uint256 nftId);
+    event DelegatedToken(address indexed user, uint256 amount);
     event Staked(address indexed user, uint256 balance, uint256 amount);
     event Rewarded(address indexed user, uint256 balance, uint256 amount);
 
@@ -139,7 +140,11 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         }
     }
 
-    function delegate(uint256 _nftID, address _user, bool _restake) external {
+    function delegateNFT(
+        uint256 _nftID,
+        address _user,
+        bool _restake
+    ) external {
         bondedToken.safeTransferFrom(msg.sender, delegationNodeStaker, _nftID);
         require(
             bondedToken.ownerOf(_nftID) == delegationNodeStaker,
@@ -152,20 +157,22 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         if (userIndexes[_user] == 0) {
             startDates[_user] = block.timestamp;
             allUsers.push(_user);
-            userIndexes[_user] = allUsers.length;
+            userIndexes[_user] = allUsers.length - 1;
             restake[_user] = _restake;
         } else {
             startDates[_user] = calcNewStartDate(_user, amount);
         }
         balances[_user] += amount;
 
-        emit Delegated(_user, _nftID);
+        emit DelegatedNFT(_user, _nftID);
         emit Staked(_user, balances[_user], amount);
     }
 
-    function stake(uint256 _amount, address _user) external {
-        require(userIndexes[_user] != 0, "Invalid user");
-
+    function delegateToken(
+        uint256 _amount,
+        address _user,
+        bool _restake
+    ) external {
         uint256 balance = IERC20Upgradeable(muonToken).balanceOf(
             delegationNodeStaker
         );
@@ -179,10 +186,17 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         ) - balance;
         require(_amount == receivedAmount, "Invalid received amount");
 
-        uint256 newStartDate = calcNewStartDate(_user, _amount);
+        if (userIndexes[_user] == 0) {
+            startDates[_user] = block.timestamp;
+            allUsers.push(_user);
+            userIndexes[_user] = allUsers.length - 1;
+            restake[_user] = _restake;
+        } else {
+            startDates[_user] = calcNewStartDate(_user, _amount);
+        }
         balances[_user] += _amount;
-        startDates[_user] = newStartDate;
 
+        emit DelegatedToken(_user, _amount);
         emit Staked(_user, balances[_user], _amount);
     }
 
