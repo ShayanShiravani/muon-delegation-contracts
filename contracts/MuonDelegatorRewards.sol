@@ -157,7 +157,7 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         if (userIndexes[_user] == 0) {
             startDates[_user] = block.timestamp;
             allUsers.push(_user);
-            userIndexes[_user] = allUsers.length - 1;
+            userIndexes[_user] = allUsers.length;
             restake[_user] = _restake;
         } else {
             startDates[_user] = calcNewStartDate(_user, amount);
@@ -189,7 +189,7 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         if (userIndexes[_user] == 0) {
             startDates[_user] = block.timestamp;
             allUsers.push(_user);
-            userIndexes[_user] = allUsers.length - 1;
+            userIndexes[_user] = allUsers.length;
             restake[_user] = _restake;
         } else {
             startDates[_user] = calcNewStartDate(_user, _amount);
