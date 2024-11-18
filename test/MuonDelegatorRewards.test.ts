@@ -241,10 +241,6 @@ describe("MuonDelegatorRewards", function () {
         startDateAfterFirstDelegate.toNumber() - firstDelegateTime
       );
       expect(firstTimeDifference).to.be.lte(1);
-      console.log(
-        "Time difference after first delegate (10 tokens):",
-        firstTimeDifference
-      );
 
       // Increase time by 5 days
       const SECONDS_IN_A_DAY = 86400;
