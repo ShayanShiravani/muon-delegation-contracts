@@ -242,18 +242,23 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         external
         view
         returns (
-            address[] memory _addr,
-            uint256[] memory _balance,
-            uint256[] memory _startDate,
-            bool[] memory _restake
+            address[] memory _addrs,
+            uint256[] memory _balances,
+            uint256[] memory _startDates,
+            bool[] memory _restakes
         )
     {
+        _addrs = new address[](toIndex - fromIndex + 1);
+        _balances = new uint256[](toIndex - fromIndex + 1);
+        _startDates = new uint256[](toIndex - fromIndex + 1);
+        _restakes = new bool[](toIndex - fromIndex + 1);
+
         for (uint256 i = fromIndex; i <= toIndex; i++) {
             address user = allUsers[i];
-            _addr[i] = user;
-            _balance[i] = balances[user];
-            _startDate[i] = startDates[user];
-            _restake[i] = restake[user];
+            _addrs[i] = user;
+            _balances[i] = balances[user];
+            _startDates[i] = startDates[user];
+            _restakes[i] = restake[user];
         }
     }
 
