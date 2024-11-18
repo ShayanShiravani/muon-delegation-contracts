@@ -216,7 +216,7 @@ describe("MuonDelegatorRewards", function () {
     });
 
     it("should update startDate correctly based on stake amount", async () => {
-      const DelegateAmountSmall = ethers.utils.parseEther("0.000001");
+      const DelegateAmountSmall = ethers.utils.parseEther("10");
       const DelegateAmountLarge = ethers.utils.parseEther("80");
       const DelegateAmountLarge2 = ethers.utils.parseEther("10000");
 
@@ -228,27 +228,27 @@ describe("MuonDelegatorRewards", function () {
       await pion
         .connect(user)
         .approve(muonDelegatorRewards.address, DelegateAmount);
-      const firstDelegateTime = (await ethers.provider.getBlock("latest"))
-        .timestamp;
+      
       await muonDelegatorRewards
         .connect(user)
         .delegateToken(DelegateAmount, user.address, false);
 
+      const firstDelegateTime = (await ethers.provider.getBlock("latest"))
+        .timestamp;
+
       const startDateAfterFirstDelegate = await muonDelegatorRewards.startDates(
         user.address
       );
-      const firstTimeDifference = Math.abs(
-        startDateAfterFirstDelegate.toNumber() - firstDelegateTime
-      );
-      expect(firstTimeDifference).to.be.lte(1);
+      // const firstTimeDifference = Math.abs(
+      //   startDateAfterFirstDelegate.toNumber() - firstDelegateTime
+      // );
+      expect(startDateAfterFirstDelegate).to.be.eq(firstDelegateTime);
 
       // Increase time by 5 days
       const SECONDS_IN_A_DAY = 86400;
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 5]);
       await ethers.provider.send("evm_mine", []);
 
-      const secondDelegateTime = (await ethers.provider.getBlock("latest"))
-        .timestamp;
       // Second delegate (0.000001 tokens)
       await pion
         .connect(user)
@@ -258,19 +258,15 @@ describe("MuonDelegatorRewards", function () {
         .connect(user)
         .delegateToken(DelegateAmountSmall, user.address, false);
 
+      const secondDelegateTime = (await ethers.provider.getBlock("latest"))
+        .timestamp;
+
       const startDateAfterSecondDelegate =
         await muonDelegatorRewards.startDates(user.address);
 
       await expect(
-        startDateAfterSecondDelegate.sub(startDateAfterFirstDelegate)
-      ).to.be.equal(0);
-
-      console.log(
-        "second",
-        startDateAfterFirstDelegate.toNumber(),
-        startDateAfterSecondDelegate.toNumber(),
-        secondDelegateTime
-      );
+        startDateAfterSecondDelegate
+      ).to.be.eq((firstDelegateTime + secondDelegateTime)/2);
 
       //third delegate DelegateAmountLarge
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 10]);
