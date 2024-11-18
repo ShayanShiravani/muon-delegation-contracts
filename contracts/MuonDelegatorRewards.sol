@@ -235,6 +235,28 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         newStartDate = (b1t1 + b2t2) / (balances[_user] + _stakeAmount);
     }
 
+    function getUsers(
+        uint256 fromIndex,
+        uint256 toIndex
+    )
+        external
+        view
+        returns (
+            address[] memory _addr,
+            uint256[] memory _balance,
+            uint256[] memory _startDate,
+            bool[] memory _restake
+        )
+    {
+        for (uint256 i = fromIndex; i <= toIndex; i++) {
+            address user = allUsers[i];
+            _addr[i] = user;
+            _balance[i] = balances[user];
+            _startDate[i] = startDates[user];
+            _restake[i] = restake[user];
+        }
+    }
+
     function transferable(
         uint256 amount,
         uint256 time
