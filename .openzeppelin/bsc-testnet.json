@@ -1,0 +1,196 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0xBB08665A367818f1da947E8a4dafcf0b15764eE9",
+    "txHash": "0xa906a4a7a8f7426ae2cc7a6f2fc3089fcea4b70abac7a74f949e0079320efbec"
+  },
+  "proxies": [
+    {
+      "address": "0xcA57C0ee7936e15C87755B897185B9079b0D00ab",
+      "txHash": "0xd4582060ace28ca8e036fccd0e17efcc1fcff02b201d00abc4fd50fc182221bc",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xEaf8dcf05Ed7279BbB53eCe91857cd9c9E103d27",
+      "txHash": "0x4352efecce05217ab789504dfec1ce76a1f0277428550893dfb01c3cd7e6b977",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x0D7393B5E924458b1021dE5D3c1D2d4B1e9758a8",
+      "txHash": "0x671a223310104158a890d67f9cf018d857d0a150a7795c65dcc448efa18194b8",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xc644dE58719d0E7E52C3F851a6e5f47d471605fa",
+      "txHash": "0xe604e49e6d2b16a0155fcead33dd990c9fe460a2b69126fe3957c226bbb992e4",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "e60ec8e573394490cf140aa4be43907c061acafe42e9edf4ce365d28a7c61a5a": {
+      "address": "0xBA6e7E007ffFB6b6B247Cec2E5cbF54ec9dF9Dba",
+      "txHash": "0x2ae4d2588e394041c80bd4c59e683168a88d121becbc8ee0307498b94e660075",
+      "layout": {
+        "solcVersion": "0.8.19",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:63",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:68"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:40"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "bondedToken",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_contract(IBondedToken)2154",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:13"
+          },
+          {
+            "label": "muonToken",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_address",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:14"
+          },
+          {
+            "label": "delegationNodeStaker",
+            "offset": 0,
+            "slot": "103",
+            "type": "t_address",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:15"
+          },
+          {
+            "label": "balances",
+            "offset": 0,
+            "slot": "104",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:17"
+          },
+          {
+            "label": "startDates",
+            "offset": 0,
+            "slot": "105",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:18"
+          },
+          {
+            "label": "restake",
+            "offset": 0,
+            "slot": "106",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:19"
+          },
+          {
+            "label": "userIndexes",
+            "offset": 0,
+            "slot": "107",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:20"
+          },
+          {
+            "label": "lastDisTime",
+            "offset": 0,
+            "slot": "108",
+            "type": "t_uint256",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:22"
+          },
+          {
+            "label": "allUsers",
+            "offset": 0,
+            "slot": "109",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "MuonDelegatorRewards",
+            "src": "contracts/MuonDelegatorRewards.sol:24"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IBondedToken)2154": {
+            "label": "contract IBondedToken",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        },
+        "namespaces": {}
+      }
+    }
+  }
+}
