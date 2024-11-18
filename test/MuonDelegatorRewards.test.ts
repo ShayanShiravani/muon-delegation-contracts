@@ -217,7 +217,7 @@ describe("MuonDelegatorRewards", function () {
 
     it("should update startDate correctly based on stake amount", async () => {
       const DelegateAmountSmall = ethers.utils.parseEther("10");
-      const DelegateAmountLarge = ethers.utils.parseEther("80");
+      const DelegateAmountLarge = ethers.utils.parseEther("40");
       const DelegateAmountLarge2 = ethers.utils.parseEther("10000");
 
       // Mint tokens for user
@@ -228,7 +228,7 @@ describe("MuonDelegatorRewards", function () {
       await pion
         .connect(user)
         .approve(muonDelegatorRewards.address, DelegateAmount);
-      
+
       await muonDelegatorRewards
         .connect(user)
         .delegateToken(DelegateAmount, user.address, false);
@@ -239,9 +239,7 @@ describe("MuonDelegatorRewards", function () {
       const startDateAfterFirstDelegate = await muonDelegatorRewards.startDates(
         user.address
       );
-      // const firstTimeDifference = Math.abs(
-      //   startDateAfterFirstDelegate.toNumber() - firstDelegateTime
-      // );
+
       expect(startDateAfterFirstDelegate).to.be.eq(firstDelegateTime);
 
       // Increase time by 5 days
@@ -264,16 +262,15 @@ describe("MuonDelegatorRewards", function () {
       const startDateAfterSecondDelegate =
         await muonDelegatorRewards.startDates(user.address);
 
-      await expect(
-        startDateAfterSecondDelegate
-      ).to.be.eq((firstDelegateTime + secondDelegateTime)/2);
+      await expect(startDateAfterSecondDelegate).to.be.eq(
+        (firstDelegateTime + secondDelegateTime) / 2
+      );
 
       //third delegate DelegateAmountLarge
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 10]);
       await ethers.provider.send("evm_mine", []);
 
-      const thirdDelegateTime = (await ethers.provider.getBlock("latest"))
-        .timestamp;
+      // console.log(await muonDelegatorRewards.balances(user.address));
 
       await pion
         .connect(user)
@@ -283,16 +280,18 @@ describe("MuonDelegatorRewards", function () {
         .connect(user)
         .delegateToken(DelegateAmountLarge, user.address, false);
 
+      const thirdDelegateTime = (await ethers.provider.getBlock("latest"))
+        .timestamp;
+
       const startDateAfterThirdDelegate = await muonDelegatorRewards.startDates(
         user.address
       );
 
-      console.log(
-        "third",
-        startDateAfterSecondDelegate.toNumber(),
-        startDateAfterThirdDelegate.toNumber(),
-        thirdDelegateTime
-      );
+      const diff =
+        ((thirdDelegateTime - startDateAfterSecondDelegate.toNumber()) * 2) / 3;
+
+      const newTime = startDateAfterSecondDelegate.toNumber() + diff;
+      await expect(startDateAfterThirdDelegate).to.be.equal(newTime);
 
       //forth delegate
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 10]);
@@ -312,12 +311,12 @@ describe("MuonDelegatorRewards", function () {
       const startDateAfterFourthDelegate =
         await muonDelegatorRewards.startDates(user.address);
 
-      console.log(
-        "forth",
-        startDateAfterThirdDelegate.toNumber(),
-        startDateAfterFourthDelegate.toNumber(),
-        fourthDelegateTime
-      );
+      // console.log(
+      //   "forth",
+      //   startDateAfterThirdDelegate.toNumber(),
+      //   startDateAfterFourthDelegate.toNumber(),
+      //   fourthDelegateTime
+      // );
     });
   });
 });
