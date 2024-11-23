@@ -142,6 +142,10 @@ describe("MuonDelegatorRewards", function () {
 
       expect(startDateAfterFirstDelegate).to.be.eq(firstDelegateTime);
 
+      expect(await pion.balanceOf(nodeStaker)).to.be.equal(
+        firstDelegateBalance
+      );
+
       // Increase time by 5 days
       const SECONDS_IN_A_DAY = 86400;
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 5]);
@@ -161,6 +165,10 @@ describe("MuonDelegatorRewards", function () {
       );
 
       expect(secondDelegateBalance).to.be.equal(
+        firstDelegateBalance.add(DelegateAmountSmall)
+      );
+
+      expect(await pion.balanceOf(nodeStaker)).to.be.equal(
         firstDelegateBalance.add(DelegateAmountSmall)
       );
 
@@ -194,6 +202,10 @@ describe("MuonDelegatorRewards", function () {
         secondDelegateBalance.add(DelegateAmountLarge)
       );
 
+      expect(await pion.balanceOf(nodeStaker)).to.be.equal(
+        secondDelegateBalance.add(DelegateAmountLarge)
+      );
+
       const thirdDelegateTime = (await ethers.provider.getBlock("latest"))
         .timestamp;
 
@@ -221,6 +233,10 @@ describe("MuonDelegatorRewards", function () {
 
       const forthDelegateBalance = await muonDelegatorRewards.balances(
         user.address
+      );
+
+      expect(await pion.balanceOf(nodeStaker)).to.be.equal(
+        thirdDelegateBalance.add(DelegateAmountLarge2)
       );
 
       expect(forthDelegateBalance).to.be.equal(
@@ -293,6 +309,91 @@ describe("MuonDelegatorRewards", function () {
 
       expect(await muonDelegatorRewards.restake(user.address)).to.be.equal(
         false
+      );
+    });
+  });
+
+  describe("Bulk import", async () => {
+    it("should successfully bulk import ", async () => {
+      const [user1, user2, user3, user4] = await ethers.getSigners();
+
+      const initialNodeStakerBalance = await pion.balanceOf(nodeStaker);
+
+      const user1Balance = ethers.utils.parseEther("5");
+      const user2Balance = ethers.utils.parseEther("10");
+      const user3Balance = ethers.utils.parseEther("15");
+      const user4Balance = ethers.utils.parseEther("20");
+
+      const userBalances = [
+        user1Balance,
+        user2Balance,
+        user3Balance,
+        user4Balance,
+      ];
+      const userAddresses = [
+        user1.address,
+        user2.address,
+        user3.address,
+        user4.address,
+      ];
+      const userStartDates = [1729666262, 1727074262, 1724395862, 1721717462];
+      const userReStakes = [false, false, true, true];
+
+      await expect(
+        muonDelegatorRewards
+          .connect(user)
+          .bulkImport(userAddresses, userBalances, userStartDates, userReStakes)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+
+      expect(await muonDelegatorRewards.balances(user1.address)).to.be.equals(
+        0
+      );
+
+      expect(await muonDelegatorRewards.balances(user2.address)).to.be.equals(
+        0
+      );
+
+      expect(await muonDelegatorRewards.balances(user3.address)).to.be.equals(
+        0
+      );
+
+      expect(await muonDelegatorRewards.balances(user4.address)).to.be.equals(
+        0
+      );
+
+      await muonDelegatorRewards
+        .connect(admin)
+        .bulkImport(userAddresses, userBalances, userStartDates, userReStakes);
+
+      const users = await muonDelegatorRewards.getUsers(0, 3);
+
+      const addresses = users[0];
+      const balances = users[1];
+      const startDates = users[2];
+      const reStakes = users[3];
+
+      expect(addresses[0]).to.be.equal(userAddresses[0]);
+      expect(addresses[1]).to.be.equal(userAddresses[1]);
+      expect(addresses[2]).to.be.equal(userAddresses[2]);
+      expect(addresses[3]).to.be.equal(userAddresses[3]);
+
+      expect(balances[0]).to.be.equal(userBalances[0]);
+      expect(balances[1]).to.be.equal(userBalances[1]);
+      expect(balances[2]).to.be.equal(userBalances[2]);
+      expect(balances[3]).to.be.equal(userBalances[3]);
+
+      expect(startDates[0]).to.be.equal(userStartDates[0]);
+      expect(startDates[1]).to.be.equal(userStartDates[1]);
+      expect(startDates[2]).to.be.equal(userStartDates[2]);
+      expect(startDates[3]).to.be.equal(userStartDates[3]);
+
+      expect(reStakes[0]).to.be.equal(userReStakes[0]);
+      expect(reStakes[1]).to.be.equal(userReStakes[1]);
+      expect(reStakes[2]).to.be.equal(userReStakes[2]);
+      expect(reStakes[3]).to.be.equal(userReStakes[3]);
+
+      expect(await pion.balanceOf(nodeStaker)).to.be.equal(
+        initialNodeStakerBalance
       );
     });
   });
