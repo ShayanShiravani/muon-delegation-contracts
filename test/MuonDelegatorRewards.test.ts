@@ -121,9 +121,17 @@ describe("MuonDelegatorRewards", function () {
         .connect(user)
         .approve(muonDelegatorRewards.address, DelegateAmount);
 
+      expect(await muonDelegatorRewards.balances(user.address)).to.be.equal(0);
+
       await muonDelegatorRewards
         .connect(user)
         .delegateToken(DelegateAmount, user.address, false);
+
+      const firstDelegateBalance = await muonDelegatorRewards.balances(
+        user.address
+      );
+
+      expect(firstDelegateBalance).to.be.equal(DelegateAmount);
 
       const firstDelegateTime = (await ethers.provider.getBlock("latest"))
         .timestamp;
@@ -148,6 +156,14 @@ describe("MuonDelegatorRewards", function () {
         .connect(user)
         .delegateToken(DelegateAmountSmall, user.address, false);
 
+      const secondDelegateBalance = await muonDelegatorRewards.balances(
+        user.address
+      );
+
+      expect(secondDelegateBalance).to.be.equal(
+        firstDelegateBalance.add(DelegateAmountSmall)
+      );
+
       const secondDelegateTime = (await ethers.provider.getBlock("latest"))
         .timestamp;
 
@@ -169,6 +185,14 @@ describe("MuonDelegatorRewards", function () {
       await muonDelegatorRewards
         .connect(user)
         .delegateToken(DelegateAmountLarge, user.address, false);
+
+      const thirdDelegateBalance = await muonDelegatorRewards.balances(
+        user.address
+      );
+
+      expect(thirdDelegateBalance).to.be.equal(
+        secondDelegateBalance.add(DelegateAmountLarge)
+      );
 
       const thirdDelegateTime = (await ethers.provider.getBlock("latest"))
         .timestamp;
@@ -194,6 +218,82 @@ describe("MuonDelegatorRewards", function () {
       await muonDelegatorRewards
         .connect(user)
         .delegateToken(DelegateAmountLarge2, user.address, false);
+
+      const forthDelegateBalance = await muonDelegatorRewards.balances(
+        user.address
+      );
+
+      expect(forthDelegateBalance).to.be.equal(
+        thirdDelegateBalance.add(DelegateAmountLarge2)
+      );
+    });
+  });
+
+  describe("Delegate NFT", async () => {
+    it("should successfully delegate nft", async () => {
+      await pion
+        .connect(admin)
+        .grantRole(await pion.MINTER_ROLE(), user.address);
+      await pion.connect(user).mint(user.address, pionMintAmount);
+      await pion.connect(user).approve(bonPion.address, pionMintAmount);
+      await bonPion
+        .connect(user)
+        .mintAndLock([pion.address], [pionMintAmount], user.address);
+
+      const nftPower = await bonPion.getLockedOf(1, [pion.address]);
+
+      const tokenId = 1;
+
+      expect(await bonPion.ownerOf(1)).to.be.equal(user.address);
+
+      await expect(
+        muonDelegatorRewards
+          .connect(user)
+          .delegateNFT(tokenId, user.address, false)
+      ).to.be.revertedWith("ERC721: caller is not token owner or approved");
+
+      await bonPion
+        .connect(user)
+        .approve(muonDelegatorRewards.address, tokenId);
+
+      expect(await bonPion.getApproved(1)).to.be.equal(
+        muonDelegatorRewards.address
+      );
+
+      await expect(
+        muonDelegatorRewards
+          .connect(user)
+          .delegateNFT(tokenId, user.address, false)
+      ).to.be.revertedWith("Transfer is Limited");
+
+      await bonPion.connect(admin).setPublicTransfer(true);
+
+      expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
+        0
+      );
+      expect(await muonDelegatorRewards.allUsers.length).to.be.equal(0);
+
+      expect(await muonDelegatorRewards.restake(user.address)).to.be.equal(
+        false
+      );
+
+      await muonDelegatorRewards
+        .connect(user)
+        .delegateNFT(tokenId, user.address, false);
+
+      expect(await bonPion.ownerOf(1)).to.be.equal(nodeStaker);
+
+      expect(await muonDelegatorRewards.balances(user.address)).to.be.equal(
+        nftPower[0]
+      );
+
+      expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
+        1
+      );
+
+      expect(await muonDelegatorRewards.restake(user.address)).to.be.equal(
+        false
+      );
     });
   });
 });
