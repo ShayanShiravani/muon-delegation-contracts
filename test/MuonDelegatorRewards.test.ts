@@ -78,9 +78,10 @@ describe("MuonDelegatorRewards", function () {
         .connect(user)
         .delegateToken(DelegateAmount, user.address, false);
 
+      const delegateTime = (await ethers.provider.getBlock("latest")).timestamp;
+
       const startDate = await muonDelegatorRewards.startDates(user.address);
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-      expect(startDate).to.be.closeTo(currentTimestamp, 10);
+      expect(startDate).to.be.equal(delegateTime);
 
       expect(await pion.balanceOf(muonDelegatorRewards.address)).to.be.equal(0);
 
@@ -103,115 +104,6 @@ describe("MuonDelegatorRewards", function () {
 
       expect(await muonDelegatorRewards.restake(user.address)).to.be.equal(
         false
-      );
-    });
-
-    it("should user delegate token successfully again", async () => {
-      //check mapping before first mint
-      expect(await muonDelegatorRewards.balances(user.address)).to.be.equal(0);
-      expect(await pion.balanceOf(nodeStaker)).to.be.equals(0);
-      expect(await pion.balanceOf(user.address)).to.be.equal(0);
-      expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
-        0
-      );
-      await pion.connect(pionMinter).mint(user.address, pionMintAmount);
-      expect(await pion.balanceOf(user.address)).to.be.equal(pionMintAmount);
-
-      await pion
-        .connect(user)
-        .approve(muonDelegatorRewards.address, DelegateAmount);
-
-      const firstTimestamp = (await ethers.provider.getBlock("latest"))
-        .timestamp;
-      await muonDelegatorRewards
-        .connect(user)
-        .delegateToken(DelegateAmount, user.address, false);
-
-      //check mapping after first delegate
-      const userDelegateBalanceAfterDelegate =
-        await muonDelegatorRewards.balances(user.address);
-      expect(userDelegateBalanceAfterDelegate).to.be.equal(DelegateAmount);
-
-      const nodeStakerPionBalanceAfterDelegate = await pion.balanceOf(
-        nodeStaker
-      );
-      expect(nodeStakerPionBalanceAfterDelegate).to.be.equals(DelegateAmount);
-
-      const userPionBalanceAfterDelegate = await pion.balanceOf(user.address);
-      expect(userPionBalanceAfterDelegate).to.be.equal(
-        pionMintAmount.sub(DelegateAmount)
-      );
-
-      expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
-        1
-      );
-
-      const userStartDateAfterFirstDelegate =
-        await muonDelegatorRewards.startDates(user.address);
-      expect(
-        Math.abs(userStartDateAfterFirstDelegate.toNumber() - firstTimestamp)
-      ).to.be.lessThanOrEqual(
-        1,
-        "Start date should be approximately the first timestamp"
-      );
-
-      const SECONDS_IN_A_DAY = 86400;
-      const TWO_DAYS = SECONDS_IN_A_DAY * 2;
-
-      await ethers.provider.send("evm_increaseTime", [TWO_DAYS]);
-      await ethers.provider.send("evm_mine", []);
-
-      //Delegate again
-      await pion
-        .connect(user)
-        .approve(muonDelegatorRewards.address, DelegateAmount);
-
-      const secondTimestamp = (await ethers.provider.getBlock("latest"))
-        .timestamp;
-
-      const expectedNewStartDate = userDelegateBalanceAfterDelegate
-        .mul(userStartDateAfterFirstDelegate)
-        .add(DelegateAmount.mul(secondTimestamp))
-        .div(userDelegateBalanceAfterDelegate.add(DelegateAmount));
-
-      await muonDelegatorRewards
-        .connect(user)
-        .delegateToken(DelegateAmount, user.address, false);
-
-      const userStartDateAfterSecondDelegate =
-        await muonDelegatorRewards.startDates(user.address);
-
-      expect(
-        Math.abs(
-          userStartDateAfterSecondDelegate.toNumber() -
-            expectedNewStartDate.toNumber()
-        )
-      ).to.be.lte(1);
-      //check mapping after second delegate
-      const secondUserDelegateBalanceAfterDelegate =
-        await muonDelegatorRewards.balances(user.address);
-
-      expect(secondUserDelegateBalanceAfterDelegate).to.be.equal(
-        userDelegateBalanceAfterDelegate.add(DelegateAmount)
-      );
-
-      const secondNodeStakerPionBalanceAfterDelegate = await pion.balanceOf(
-        nodeStaker
-      );
-      expect(secondNodeStakerPionBalanceAfterDelegate).to.be.equal(
-        nodeStakerPionBalanceAfterDelegate.add(DelegateAmount)
-      );
-
-      const secondUserPionBalanceAfterDelegate = await pion.balanceOf(
-        user.address
-      );
-
-      expect(secondUserPionBalanceAfterDelegate).to.be.equal(
-        pionMintAmount.sub(secondUserDelegateBalanceAfterDelegate)
-      );
-
-      expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
-        1
       );
     });
 
@@ -270,8 +162,6 @@ describe("MuonDelegatorRewards", function () {
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 10]);
       await ethers.provider.send("evm_mine", []);
 
-      // console.log(await muonDelegatorRewards.balances(user.address));
-
       await pion
         .connect(user)
         .approve(muonDelegatorRewards.address, DelegateAmountLarge);
@@ -297,9 +187,6 @@ describe("MuonDelegatorRewards", function () {
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_A_DAY * 10]);
       await ethers.provider.send("evm_mine", []);
 
-      const fourthDelegateTime = (await ethers.provider.getBlock("latest"))
-        .timestamp;
-
       await pion
         .connect(user)
         .approve(muonDelegatorRewards.address, DelegateAmountLarge2);
@@ -307,16 +194,6 @@ describe("MuonDelegatorRewards", function () {
       await muonDelegatorRewards
         .connect(user)
         .delegateToken(DelegateAmountLarge2, user.address, false);
-
-      const startDateAfterFourthDelegate =
-        await muonDelegatorRewards.startDates(user.address);
-
-      // console.log(
-      //   "forth",
-      //   startDateAfterThirdDelegate.toNumber(),
-      //   startDateAfterFourthDelegate.toNumber(),
-      //   fourthDelegateTime
-      // );
     });
   });
 });
