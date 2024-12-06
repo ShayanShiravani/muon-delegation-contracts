@@ -22,6 +22,7 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
     uint256 public lastDisTime;
 
     address[] public allUsers;
+    uint256 public bonTokenId;
 
     event DelegatedNFT(address indexed user, uint256 nftId);
     event DelegatedToken(address indexed user, uint256 amount);
@@ -145,14 +146,14 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
         address _user,
         bool _restake
     ) external {
-        bondedToken.safeTransferFrom(msg.sender, delegationNodeStaker, _nftID);
-        require(
-            bondedToken.ownerOf(_nftID) == delegationNodeStaker,
-            "Tranfer failed"
-        );
+        require(bondedToken.ownerOf(_nftID) == msg.sender, "Invalid nftId");
+        bondedToken.safeTransferFrom(msg.sender, address(this), _nftID);
+        require(bondedToken.ownerOf(_nftID) == address(this), "Tranfer failed");
         address[] memory tokens = new address[](1);
         tokens[0] = muonToken;
+        // TODO: replace with valueOfBondedToken
         uint256 amount = bondedToken.getLockedOf(_nftID, tokens)[0];
+        bondedToken.merge(_nftID, bonTokenId);
 
         if (userIndexes[_user] == 0) {
             startDates[_user] = block.timestamp;
@@ -202,6 +203,15 @@ contract MuonDelegatorRewards is Initializable, OwnableUpgradeable {
 
     function setRestake(bool _restake) external {
         restake[msg.sender] = _restake;
+    }
+
+    function setBonToken(uint256 _tokenId) external onlyOwner {
+        bonTokenId = _tokenId;
+    }
+
+    function withdrawBonToken(address _to) external onlyOwner {
+        bondedToken.safeTransferFrom(address(this), _to, bonTokenId);
+        bonTokenId = bondedToken.mint(address(this));
     }
 
     function calcAmounts(
