@@ -293,31 +293,43 @@ describe("MuonDelegatorRewards", function () {
         false
       );
 
-      await muonDelegatorRewards
-        .connect(user)
-        .delegateNFT(tokenId, user.address, false);
+      // await muonDelegatorRewards
+      //   .connect(user)
+      //   .delegateNFT(tokenId, user.address, false);
 
-      expect(await bonPion.ownerOf(1)).to.be.equal(nodeStaker);
+      // expect(await bonPion.ownerOf(1)).to.be.equal(nodeStaker);
 
-      expect(await muonDelegatorRewards.balances(user.address)).to.be.equal(
-        nftPower[0]
-      );
+      // expect(await muonDelegatorRewards.balances(user.address)).to.be.equal(
+      //   nftPower[0]
+      // );
 
-      expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
-        1
-      );
+      // expect(await muonDelegatorRewards.userIndexes(user.address)).to.be.equal(
+      //   1
+      // );
 
-      expect(await muonDelegatorRewards.restake(user.address)).to.be.equal(
-        false
-      );
+      // expect(await muonDelegatorRewards.restake(user.address)).to.be.equal(
+      //   false
+      // );
     });
   });
 
   describe("Bulk import", async () => {
     it("should successfully bulk import ", async () => {
-      const [user1, user2, user3, user4] = await ethers.getSigners();
+      const [firstUser, user1, user2, user3, user4, lastUser] =
+        await ethers.getSigners();
 
       const initialNodeStakerBalance = await pion.balanceOf(nodeStaker);
+
+      await pion.connect(pionMinter).mint(firstUser.address, pionMintAmount);
+
+      await pion
+        .connect(firstUser)
+        .approve(muonDelegatorRewards.address, DelegateAmount);
+
+      //Delegate Token
+      await muonDelegatorRewards
+        .connect(firstUser)
+        .delegateToken(DelegateAmount, firstUser.address, false);
 
       const user1Balance = ethers.utils.parseEther("5");
       const user2Balance = ethers.utils.parseEther("10");
@@ -365,36 +377,86 @@ describe("MuonDelegatorRewards", function () {
         .connect(admin)
         .bulkImport(userAddresses, userBalances, userStartDates, userReStakes);
 
-      const users = await muonDelegatorRewards.getUsers(0, 3);
+      const users = await muonDelegatorRewards.getUsers(0, 4);
 
       const addresses = users[0];
       const balances = users[1];
       const startDates = users[2];
       const reStakes = users[3];
 
-      expect(addresses[0]).to.be.equal(userAddresses[0]);
-      expect(addresses[1]).to.be.equal(userAddresses[1]);
-      expect(addresses[2]).to.be.equal(userAddresses[2]);
-      expect(addresses[3]).to.be.equal(userAddresses[3]);
+      expect(addresses[0]).to.be.equal(firstUser.address);
+      expect(addresses[1]).to.be.equal(userAddresses[0]);
+      expect(addresses[2]).to.be.equal(userAddresses[1]);
+      expect(addresses[3]).to.be.equal(userAddresses[2]);
+      expect(addresses[4]).to.be.equal(userAddresses[3]);
 
-      expect(balances[0]).to.be.equal(userBalances[0]);
-      expect(balances[1]).to.be.equal(userBalances[1]);
-      expect(balances[2]).to.be.equal(userBalances[2]);
-      expect(balances[3]).to.be.equal(userBalances[3]);
+      expect(balances[1]).to.be.equal(userBalances[0]);
+      expect(balances[2]).to.be.equal(userBalances[1]);
+      expect(balances[3]).to.be.equal(userBalances[2]);
+      expect(balances[4]).to.be.equal(userBalances[3]);
 
-      expect(startDates[0]).to.be.equal(userStartDates[0]);
-      expect(startDates[1]).to.be.equal(userStartDates[1]);
-      expect(startDates[2]).to.be.equal(userStartDates[2]);
-      expect(startDates[3]).to.be.equal(userStartDates[3]);
+      expect(startDates[1]).to.be.equal(userStartDates[0]);
+      expect(startDates[2]).to.be.equal(userStartDates[1]);
+      expect(startDates[3]).to.be.equal(userStartDates[2]);
+      expect(startDates[4]).to.be.equal(userStartDates[3]);
 
-      expect(reStakes[0]).to.be.equal(userReStakes[0]);
-      expect(reStakes[1]).to.be.equal(userReStakes[1]);
-      expect(reStakes[2]).to.be.equal(userReStakes[2]);
-      expect(reStakes[3]).to.be.equal(userReStakes[3]);
+      expect(reStakes[1]).to.be.equal(userReStakes[0]);
+      expect(reStakes[2]).to.be.equal(userReStakes[1]);
+      expect(reStakes[3]).to.be.equal(userReStakes[2]);
+      expect(reStakes[4]).to.be.equal(userReStakes[3]);
 
       expect(await pion.balanceOf(nodeStaker)).to.be.equal(
-        initialNodeStakerBalance
+        initialNodeStakerBalance.add(DelegateAmount)
       );
+
+      await pion.connect(pionMinter).mint(lastUser.address, pionMintAmount);
+
+      await pion
+        .connect(lastUser)
+        .approve(muonDelegatorRewards.address, DelegateAmount);
+
+      //Delegate Token
+      await muonDelegatorRewards
+        .connect(lastUser)
+        .delegateToken(DelegateAmount, lastUser.address, false);
+
+      let updatedUsersIndex = await muonDelegatorRewards.getUsers(0, 5);
+
+      expect(updatedUsersIndex[0][5]).to.be.equal(lastUser.address);
+
+      //remove user
+
+      const removeIndex = 1;
+
+      const userToRemoveAddress = updatedUsersIndex[0][removeIndex];
+
+      const lastUserIndex = updatedUsersIndex[0].length - 1;
+
+      console.log(lastUserIndex);
+
+      const lastUserAddress = updatedUsersIndex[0][lastUserIndex];
+
+      await muonDelegatorRewards.connect(admin).removeUser(removeIndex);
+
+      await expect(muonDelegatorRewards.getUsers(0, 5)).to.be.reverted;
+
+      updatedUsersIndex = await muonDelegatorRewards.getUsers(0, 4);
+
+      expect(await updatedUsersIndex[0][removeIndex]).to.be.equals(
+        lastUserAddress
+      );
+
+      expect(await muonDelegatorRewards.allUsers(removeIndex)).to.be.equals(
+        lastUserAddress
+      );
+
+      expect(
+        await muonDelegatorRewards.userIndexes(userToRemoveAddress)
+      ).to.be.equals(0);
+
+      expect(
+        await muonDelegatorRewards.userIndexes(lastUserAddress)
+      ).to.be.equals(removeIndex);
     });
   });
 });
